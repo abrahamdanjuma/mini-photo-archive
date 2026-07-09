@@ -762,9 +762,22 @@ hr {
 
     .frame {
         border-radius: 16px;
+        overflow-x: hidden;
+        overflow-y: visible; /* let the page scroll normally so the sticky
+                                 topbar below sticks to the real viewport
+                                 instead of being trapped by .frame */
     }
 
-    /* ---- TOPBAR ---- */
+    /* ---- TOPBAR: stays pinned to the top while the page scrolls ---- */
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: #f6f3ec;
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+    }
+
     .topbar-segment {
         padding: 12px 16px;
     }
