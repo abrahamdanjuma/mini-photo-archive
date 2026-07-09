@@ -758,14 +758,18 @@ hr {
 
     body {
         padding: 10px;
+        overflow-x: hidden; /* clip horizontally at the true root scroller
+                                instead of on .frame, so .frame never becomes
+                                a scroll container and the sticky topbar
+                                below sticks to the real page, not to .frame */
     }
 
     .frame {
         border-radius: 16px;
-        overflow-x: hidden;
-        overflow-y: visible; /* let the page scroll normally so the sticky
-                                 topbar below sticks to the real viewport
-                                 instead of being trapped by .frame */
+        overflow: visible; /* must be fully visible on both axes — even
+                               mixing overflow-x:hidden with overflow-y:visible
+                               silently turns .frame into its own scroll
+                               container, which breaks position:sticky below */
     }
 
     /* ---- TOPBAR: stays pinned to the top while the page scrolls ---- */
