@@ -56,7 +56,7 @@
                     <hr />
                     <span class="archive-tag">ARC. 01/04</span>
                 </div>
-                <img class="hero-img" src="hero-mg.jpg" alt="" />
+                <img class="hero-img" src="hero-mg.jpg" alt="Hero image" />
                 <dl class="meta-list">
                     <div class="meta-row"><dt>STATUS</dt><dd>RETIRED, CAMERA SHELVED</dd></div>
                     <div class="meta-row"><dt>ARCHIVE</dt><dd>4 SURVIVING FRAMES</dd></div>
@@ -113,6 +113,7 @@
 
     <script>
         // ========== CONFIGURATION ==========
+        // Your backend URL – update this if your Render URL changes.
         const API_BASE = 'https://mini-photo-archive.onrender.com';
         // ====================================================
 
@@ -126,12 +127,14 @@
             intro.classList.add('intro-hidden');
         });
 
-        // ========== SLIDESHOW DATA (EDIT YOUR 4 IMAGES HERE) ==========
+        // ========== SLIDESHOW DATA ==========
+        // ★★★ REPLACE these with your own images ★★★
+        // Make sure the files are in the same folder as index.html (the root of your repo)
         const slidesData = [
-            { src: 'your-image-1.jpg', alt: 'Frame 01', caption: 'FRAME 01' },
-            { src: 'your-image-2.jpg', alt: 'Frame 02', caption: 'FRAME 02' },
-            { src: 'your-image-3.jpg', alt: 'Frame 03', caption: 'FRAME 03' },
-            { src: 'frame-1.jpg', alt: 'Frame 04', caption: 'FRAME 04' }
+            { src: 'frame-1.jpg', alt: 'Frame 01', caption: 'FRAME 01' },
+            { src: 'frame-2.jpg', alt: 'Frame 02', caption: 'FRAME 02' },
+            { src: 'frame-3.jpg', alt: 'Frame 03', caption: 'FRAME 03' },
+            { src: 'frame-4.jpg', alt: 'Frame 04', caption: 'FRAME 04' }
         ];
 
         // ========== SLIDESHOW ENGINE ==========
@@ -245,15 +248,21 @@
             if (e.key === 'ArrowRight') { lightboxIndex++; updateLightbox(); }
         });
 
-        // ========== COMMENT SYSTEM (using API_BASE) ==========
+        // ========== COMMENT SYSTEM ==========
         const commentList = document.getElementById('commentList');
         const commentName = document.getElementById('commentName');
         const commentText = document.getElementById('commentText');
         const commentSend = document.getElementById('commentSend');
 
         async function fetchComments() {
-            const res = await fetch(`${API_BASE}/api/comments`);
-            return res.json();
+            try {
+                const res = await fetch(`${API_BASE}/api/comments`);
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return await res.json();
+            } catch (error) {
+                console.error('Error fetching comments:', error);
+                return [];
+            }
         }
 
         async function renderComments() {
@@ -268,30 +277,36 @@
                 commentList.appendChild(empty);
                 return;
             }
-            comments.forEach(c => {
+            comments.slice().reverse().forEach(c => {
                 const item = document.createElement('div');
                 item.className = 'comment-item';
                 item.innerHTML = `
-                    <span class="comment-author">${c.name}</span>
+                    <span class="comment-author">${c.name || 'Anonymous'}</span>
                     <span class="comment-message">${c.text}</span>
                 `;
                 commentList.appendChild(item);
             });
-            commentList.scrollTop = commentList.scrollHeight;
         }
 
         async function addComment() {
             const name = commentName.value.trim() || 'Anonymous';
             const text = commentText.value.trim();
             if (!text) return;
-            await fetch(`${API_BASE}/api/comments`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, text })
-            });
-            commentName.value = '';
-            commentText.value = '';
-            renderComments();
+
+            try {
+                const res = await fetch(`${API_BASE}/api/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, text })
+                });
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                commentName.value = '';
+                commentText.value = '';
+                await renderComments();
+            } catch (error) {
+                console.error('Error posting comment:', error);
+                alert('Could not post comment. Please try again later.');
+            }
         }
 
         commentSend.addEventListener('click', addComment);
@@ -302,11 +317,9 @@
             }
         });
 
+        // Initial render
         renderComments();
     </script>
 
 </body>
 </html>
-
-
-                
