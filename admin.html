@@ -147,6 +147,7 @@
 
     <script>
         // ========== CONFIGURATION ==========
+        // Your Render backend URL – already correct
         const API_BASE = 'https://mini-photo-archive.onrender.com';
         // ====================================================
 
@@ -154,8 +155,14 @@
         const totalCount = document.getElementById('totalCount');
 
         async function fetchComments() {
-            const res = await fetch(`${API_BASE}/api/comments`);
-            return res.json();
+            try {
+                const res = await fetch(`${API_BASE}/api/comments`);
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return await res.json();
+            } catch (error) {
+                console.error('Error fetching comments:', error);
+                return [];
+            }
         }
 
         async function renderTable() {
@@ -202,6 +209,7 @@
 
         document.getElementById('refreshBtn').addEventListener('click', renderTable);
 
+        // Initial render
         renderTable();
     </script>
 
