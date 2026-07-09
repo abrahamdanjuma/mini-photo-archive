@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="main.css" />
+    <title>Admin · Guestbook</title>
+    <style>
+        .admin-wrapper {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 24px;
+            background: #f6f3ec;
+            border: 2px solid #000000;
+            border-radius: 16px;
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #000000;
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .admin-header h1 {
+            font-family: 'OB', sans-serif;
+            font-size: 1.8rem;
+            margin: 0;
+        }
+        .admin-actions {
+            display: flex;
+            gap: 12px;
+        }
+        .admin-btn {
+            padding: 8px 16px;
+            border: 2px solid #000000;
+            background: #000000;
+            color: var(--accent);
+            font-family: 'MH', monospace;
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .admin-btn:hover {
+            background: #1a1a1a;
+        }
+        .admin-btn.danger {
+            background: #b91c1c;
+            border-color: #b91c1c;
+            color: #f6f3ec;
+        }
+        .admin-btn.danger:hover {
+            background: #a01515;
+        }
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'MH', monospace;
+            font-size: 12px;
+        }
+        .admin-table th {
+            text-align: left;
+            padding: 10px 8px;
+            border-bottom: 2px solid #000000;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-size: 10px;
+        }
+        .admin-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #00000022;
+            vertical-align: middle;
+        }
+        .admin-table .timestamp {
+            color: #00000088;
+            font-size: 10px;
+            white-space: nowrap;
+        }
+        .admin-table .delete-btn {
+            background: none;
+            border: 1px solid #b91c1c;
+            color: #b91c1c;
+            padding: 4px 12px;
+            font-family: 'MH', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .admin-table .delete-btn:hover {
+            background: #b91c1c;
+            color: #f6f3ec;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 0;
+            color: #00000088;
+            font-family: 'MH', monospace;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #000000;
+            text-decoration: underline;
+            font-family: 'MH', monospace;
+            font-size: 12px;
+        }
+        .stats {
+            font-family: 'MH', monospace;
+            font-size: 12px;
+            background: #00000010;
+            padding: 4px 12px;
+            border: 1px solid #00000022;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-wrapper">
+        <div class="admin-header">
+            <h1>🛠️ GUESTBOOK · ADMIN</h1>
+            <div class="admin-actions">
+                <span class="stats" id="totalCount">0 comments</span>
+                <button class="admin-btn" id="refreshBtn">↻ REFRESH</button>
+                <button class="admin-btn danger" id="deleteAllBtn">✕ DELETE ALL</button>
+            </div>
+        </div>
+
+        <table class="admin-table" id="adminTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Message</th>
+                    <th>Timestamp</th>
+                    <th style="text-align:right;">Action</th>
+                </tr>
+            </thead>
+            <tbody id="adminTableBody">
+                <!-- rows rendered by JS -->
+            </tbody>
+        </table>
+
+        <a href="/" class="back-link">← back to archive</a>
+    </div>
+
+    <script>
+        // ========== CONFIGURATION ==========
+        const API_BASE = 'https://mini-photo-archive.onrender.com';
+        // ====================================================
+
+        const tbody = document.getElementById('adminTableBody');
+        const totalCount = document.getElementById('totalCount');
+
+        async function fetchComments() {
+            const res = await fetch(`${API_BASE}/api/comments`);
+            return res.json();
+        }
+
+        async function renderTable() {
+            const comments = await fetchComments();
+            tbody.innerHTML = '';
+            if (comments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="empty-state">no comments yet.</td></tr>`;
+                totalCount.textContent = '0 comments';
+                return;
+            }
+            comments.forEach(c => {
+                const tr = document.createElement('tr');
+                const date = new Date(c.timestamp);
+                const formatted = date.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                tr.innerHTML = `
+                    <td><strong>${c.name}</strong></td>
+                    <td>${c.text}</td>
+                    <td class="timestamp">${formatted}</td>
+                    <td style="text-align:right;">
+                        <button class="delete-btn" data-id="${c.id}">DELETE</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            totalCount.textContent = `${comments.length} comment${comments.length !== 1 ? 's' : ''}`;
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.target.dataset.id;
+                    if (confirm('Delete this comment?')) {
+                        await fetch(`${API_BASE}/api/comments/${id}`, { method: 'DELETE' });
+                        renderTable();
+                    }
+                });
+            });
+        }
+
+        document.getElementById('deleteAllBtn').addEventListener('click', async () => {
+            if (confirm('⚠️ Delete ALL comments? This cannot be undone.')) {
+                await fetch(`${API_BASE}/api/comments`, { method: 'DELETE' });
+                renderTable();
+            }
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', renderTable);
+
+        renderTable();
+    </script>
+
+</body>
+</html>

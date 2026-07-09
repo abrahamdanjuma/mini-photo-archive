@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="main.css" />
+    <title>Amateur Photography</title>
+</head>
+<body>
+
+    <!-- RETRO TV INTRO -->
+    <div class="intro" id="intro">
+        <div class="intro-card">
+            <div class="intro-banner">
+                <span class="intro-status"><span class="status-dot"></span>STANDBY</span>
+                <div class="intro-badge">AB</div>
+            </div>
+            <div class="intro-body">
+                <p class="intro-channel">@AMATEUR.PHOTOGRAPHY</p>
+                <h2 class="intro-heading">SIGNAL<br />FOUND.</h2>
+                <p class="intro-bio">Best viewed full screen — that's what this button is for.</p>
+            </div>
+            <button class="intro-button" id="introButton">▶ TUNE IN</button>
+        </div>
+    </div>
+
+    <!-- LIGHTBOX OVERLAY -->
+    <div class="lightbox-overlay" id="lightbox">
+        <button class="lightbox-close" id="lightboxClose">✕</button>
+        <button class="lightbox-nav lightbox-prev" id="lightboxPrev">←</button>
+        <button class="lightbox-nav lightbox-next" id="lightboxNext">→</button>
+        <div class="lightbox-track" id="lightboxTrack"></div>
+        <div class="lightbox-counter" id="lightboxCounter">1 / 4</div>
+    </div>
+
+    <div class="frame">
+
+        <header class="topbar">
+            <div class="topbar-segment topbar-logo">
+                <a class="logo-badge" href="#">AB</a>
+            </div>
+            <div class="topbar-segment topbar-menu">
+                <span class="topbar-tag">PHOTO ARCHIVE</span>
+                <ul><li><a href="#">x</a></li></ul>
+            </div>
+        </header>
+
+        <main class="content">
+
+            <!-- LEFT PANEL -->
+            <section class="panel panel-main">
+                <h1 class="hero-title">AMATEUR PHOTOGRAPHY</h1>
+                <br /><br />
+                <p class="hero-bio">Retired the camera post-GCSE.</p>
+                <div class="divider-row">
+                    <hr />
+                    <span class="archive-tag">ARC. 01/04</span>
+                </div>
+                <img class="hero-img" src="hero-mg.jpg" alt="" />
+                <dl class="meta-list">
+                    <div class="meta-row"><dt>STATUS</dt><dd>RETIRED, CAMERA SHELVED</dd></div>
+                    <div class="meta-row"><dt>ARCHIVE</dt><dd>4 SURVIVING FRAMES</dd></div>
+                    <div class="meta-row"><dt>PURPOSE</dt><dd>A SMALL RECORD, NOT A PORTFOLIO</dd></div>
+                </dl>
+                <br />
+                <p class="sign-off">— end of roll —</p>
+            </section>
+
+            <!-- RIGHT PANEL -->
+            <aside class="panel panel-side">
+
+                <!-- SLIDESHOW (clickable to open lightbox) -->
+                <div class="panel-side-top">
+                    <div class="slideshow-wrapper">
+                        <div class="slideshow-container" id="slideshow">
+                            <div class="slideshow-track" id="slideshowTrack"></div>
+                            <button class="slide-nav slide-prev" id="slidePrev">←</button>
+                            <button class="slide-nav slide-next" id="slideNext">→</button>
+                            <div class="slide-dots" id="slideDots"></div>
+                            <span class="slide-counter" id="slideCounter">01 / 04</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GUESTBOOK -->
+                <div class="panel-side-bottom">
+                    <div class="mini-banner">
+                        <span class="mini-status"><span class="status-dot"></span>OFFLINE</span>
+                        <div class="mini-badge">AB</div>
+                        <span class="mini-watermark">ABE</span>
+                    </div>
+                    <div class="mini-body">
+                        <p class="mini-handle">@ABRAHAM.D</p>
+                        <h3 class="mini-name">ABRAHAM DANJUMA</h3>
+                        <p class="mini-bio">Amateur photographer, retired post-GCSE. Builds the rest of the time.</p>
+
+                        <div class="comment-section">
+                            <div class="comment-list" id="commentList"></div>
+                            <div class="comment-form">
+                                <input type="text" class="comment-name" id="commentName" placeholder="your name (optional)" />
+                                <textarea class="comment-text" id="commentText" placeholder="leave a comment..."></textarea>
+                                <button class="comment-send" id="commentSend">SEND</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </aside>
+
+        </main>
+
+    </div>
+
+    <script>
+        // ========== CONFIGURATION ==========
+        const API_BASE = 'https://mini-photo-archive.onrender.com';
+        // ====================================================
+
+        // ========== INTRO / FULLSCREEN ==========
+        const introButton = document.getElementById('introButton');
+        const intro = document.getElementById('intro');
+        introButton.addEventListener('click', () => {
+            const root = document.documentElement;
+            const request = root.requestFullscreen || root.webkitRequestFullscreen || root.msRequestFullscreen;
+            if (request) request.call(root).catch(() => {});
+            intro.classList.add('intro-hidden');
+        });
+
+        // ========== SLIDESHOW DATA (EDIT YOUR 4 IMAGES HERE) ==========
+        const slidesData = [
+            { src: 'your-image-1.jpg', alt: 'Frame 01', caption: 'FRAME 01' },
+            { src: 'your-image-2.jpg', alt: 'Frame 02', caption: 'FRAME 02' },
+            { src: 'your-image-3.jpg', alt: 'Frame 03', caption: 'FRAME 03' },
+            { src: 'frame-1.jpg', alt: 'Frame 04', caption: 'FRAME 04' }
+        ];
+
+        // ========== SLIDESHOW ENGINE ==========
+        const track = document.getElementById('slideshowTrack');
+        const dotsContainer = document.getElementById('slideDots');
+        const counter = document.getElementById('slideCounter');
+        const prevBtn = document.getElementById('slidePrev');
+        const nextBtn = document.getElementById('slideNext');
+        let currentIndex = 0;
+
+        function buildSlideshow() {
+            slidesData.forEach((item, index) => {
+                const slide = document.createElement('div');
+                slide.className = 'slide';
+                slide.dataset.index = index;
+                const img = document.createElement('img');
+                img.src = item.src;
+                img.alt = item.alt;
+                img.loading = 'lazy';
+                const caption = document.createElement('span');
+                caption.className = 'slide-caption';
+                caption.textContent = item.caption;
+                slide.appendChild(img);
+                slide.appendChild(caption);
+                track.appendChild(slide);
+
+                const dot = document.createElement('button');
+                dot.className = 'slide-dot';
+                dot.dataset.index = index;
+                dot.addEventListener('click', () => goTo(index));
+                dotsContainer.appendChild(dot);
+            });
+        }
+        buildSlideshow();
+
+        function goTo(index) {
+            const slides = track.querySelectorAll('.slide');
+            const dots = dotsContainer.querySelectorAll('.slide-dot');
+            const total = slides.length;
+            if (index < 0) index = total - 1;
+            if (index >= total) index = 0;
+            track.style.transform = `translateX(-${index * 100}%)`;
+            slides.forEach((s, i) => s.classList.toggle('active', i === index));
+            dots.forEach((d, i) => d.classList.toggle('active', i === index));
+            counter.textContent = String(index + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
+            currentIndex = index;
+        }
+
+        prevBtn.addEventListener('click', () => goTo(currentIndex - 1));
+        nextBtn.addEventListener('click', () => goTo(currentIndex + 1));
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') goTo(currentIndex - 1);
+            if (e.key === 'ArrowRight') goTo(currentIndex + 1);
+        });
+        goTo(0);
+
+        // ========== LIGHTBOX ==========
+        const lightbox = document.getElementById('lightbox');
+        const lightboxTrack = document.getElementById('lightboxTrack');
+        const lightboxCounter = document.getElementById('lightboxCounter');
+        const lightboxPrev = document.getElementById('lightboxPrev');
+        const lightboxNext = document.getElementById('lightboxNext');
+        const lightboxClose = document.getElementById('lightboxClose');
+        let lightboxIndex = 0;
+
+        // Build lightbox images
+        slidesData.forEach((item) => {
+            const img = document.createElement('img');
+            img.src = item.src;
+            img.alt = item.alt;
+            lightboxTrack.appendChild(img);
+        });
+
+        function openLightbox(index) {
+            lightboxIndex = index;
+            lightbox.classList.add('active');
+            updateLightbox();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function updateLightbox() {
+            const images = lightboxTrack.querySelectorAll('img');
+            const total = images.length;
+            if (lightboxIndex < 0) lightboxIndex = total - 1;
+            if (lightboxIndex >= total) lightboxIndex = 0;
+            images.forEach((img, i) => {
+                img.style.display = i === lightboxIndex ? 'block' : 'none';
+            });
+            lightboxCounter.textContent = String(lightboxIndex + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
+        }
+
+        // Click on slideshow container -> open lightbox at current slide
+        document.querySelector('.slideshow-container').addEventListener('click', (e) => {
+            if (e.target.closest('button') || e.target.closest('.slide-dots') || e.target.closest('.slide-counter')) return;
+            openLightbox(currentIndex);
+        });
+
+        lightboxPrev.addEventListener('click', (e) => { e.stopPropagation(); lightboxIndex--; updateLightbox(); });
+        lightboxNext.addEventListener('click', (e) => { e.stopPropagation(); lightboxIndex++; updateLightbox(); });
+        lightboxClose.addEventListener('click', closeLightbox);
+        lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+        document.addEventListener('keydown', (e) => {
+            if (!lightbox.classList.contains('active')) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') { lightboxIndex--; updateLightbox(); }
+            if (e.key === 'ArrowRight') { lightboxIndex++; updateLightbox(); }
+        });
+
+        // ========== COMMENT SYSTEM (using API_BASE) ==========
+        const commentList = document.getElementById('commentList');
+        const commentName = document.getElementById('commentName');
+        const commentText = document.getElementById('commentText');
+        const commentSend = document.getElementById('commentSend');
+
+        async function fetchComments() {
+            const res = await fetch(`${API_BASE}/api/comments`);
+            return res.json();
+        }
+
+        async function renderComments() {
+            const comments = await fetchComments();
+            commentList.innerHTML = '';
+            if (comments.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'comment-item';
+                empty.style.textAlign = 'center';
+                empty.style.color = '#00000066';
+                empty.textContent = 'no comments yet.';
+                commentList.appendChild(empty);
+                return;
+            }
+            comments.forEach(c => {
+                const item = document.createElement('div');
+                item.className = 'comment-item';
+                item.innerHTML = `
+                    <span class="comment-author">${c.name}</span>
+                    <span class="comment-message">${c.text}</span>
+                `;
+                commentList.appendChild(item);
+            });
+            commentList.scrollTop = commentList.scrollHeight;
+        }
+
+        async function addComment() {
+            const name = commentName.value.trim() || 'Anonymous';
+            const text = commentText.value.trim();
+            if (!text) return;
+            await fetch(`${API_BASE}/api/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, text })
+            });
+            commentName.value = '';
+            commentText.value = '';
+            renderComments();
+        }
+
+        commentSend.addEventListener('click', addComment);
+        commentText.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                addComment();
+            }
+        });
+
+        renderComments();
+    </script>
+
+</body>
+</html>
+
+
+                
