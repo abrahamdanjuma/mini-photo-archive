@@ -161,6 +161,7 @@ body {
     border: 2px solid #000000;
     border-radius: 24px;
     overflow: hidden;
+    height: 100%;
 }
 
 /* TOPBAR */
